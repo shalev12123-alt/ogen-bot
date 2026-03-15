@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: ogen-whatsapp-bot
+    env: node
+    region: frankfurt
+    plan: starter
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: RECRUITER_NUMBER
+        sync: false
+      - key: PORT
+        value: 3000
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: "false"
+    disk:
+      name: wa-session
+      mountPath: /opt/render/project/src/wa-session
+      sizeGB: 1
