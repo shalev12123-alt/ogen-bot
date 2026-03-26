@@ -131,4 +131,24 @@ router.get('/publish-jobs', async (req, res) => {
     }
   } catch(e) { console.error('Publish error:', e.message); }
 });
+router.get('/load-jobs', async (req, res) => {
+  try {
+    const jobs = require('../jobs_data.json');
+    let count = 0;
+    for (const j of jobs) {
+      await db.createJob({
+        title: j.title,
+        location: j.location,
+        field: j.field || 'כחול-לבן / תעשייה',
+        requirements: j.requirements || '',
+        is_active: true,
+        urgent: false
+      });
+      count++;
+    }
+    res.json({ ok: true, loaded: count });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
 module.exports = router;
