@@ -4,6 +4,7 @@ const cors    = require('cors');
 const path    = require('path');
 
 const whatsapp  = require('./channels/whatsapp');
+const telegram = require('./channels/telegram');
 const instagram = require('./channels/instagram');
 const apiRoutes = require('./routes/api');
 
@@ -29,6 +30,7 @@ app.get('/webhook', (req, res) => {
 });
 
 // POST — הודעות נכנסות
+app.post('/telegram', telegram.handleIncoming);
 app.post('/webhook', async (req, res) => {
   res.sendStatus(200); // תמיד עונים מהר ל-Meta
   try {
@@ -60,4 +62,6 @@ app.listen(PORT, () => {
   console.log(`🚀 עוגן-בוט פועל על פורט ${PORT}`);
   console.log(`📱 Webhook: https://YOUR_DOMAIN/webhook`);
   console.log(`🖥️  Dashboard: https://YOUR_DOMAIN/dashboard`);
-});
+}); if (process.env.TELEGRAM_TOKEN) {
+  telegram.setWebhook('https://ogen-whatsapp-bot-production.up.railway.app');
+}
