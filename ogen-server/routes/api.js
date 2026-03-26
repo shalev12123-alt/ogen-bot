@@ -171,7 +171,4 @@ router.get('/get-chats', async (req, res) => {
 });
 ```
 
-לחץ **Commit** ← אחר כך שלח `/start` בכל קבוצה ← פתח:
-```
-https://ogen-whatsapp-bot-production.up.railway.app/api/get-chats
 module.exports = router;
