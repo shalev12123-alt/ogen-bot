@@ -157,4 +157,21 @@ router.get('/load-jobs', async (req, res) => {
   }
 });
 
+router.get('/get-chats', async (req, res) => {
+  try {
+    const token = process.env.TELEGRAM_TOKEN;
+    const r = await axios.post(
+      `https://api.telegram.org/bot${token}/getUpdates`,
+      { offset: -10 }
+    );
+    res.json(r.data);
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+```
+
+לחץ **Commit** ← אחר כך שלח `/start` בכל קבוצה ← פתח:
+```
+https://ogen-whatsapp-bot-production.up.railway.app/api/get-chats
 module.exports = router;
