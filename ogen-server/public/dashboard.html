@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>עוגן תעסוקתי — דשבורד צוות</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#0B1E35;--navy2:#152d4d;--gold:#C9A84C;
+  --bg:#F4F3EF;--white:#fff;--text:#1a1a2e;--muted:#6b7280;
+  --border:#e5e3dc;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;
+  --green-bg:#dcfce7;--green-text:#166534;
+  --amber-bg:#fef3c7;--amber-text:#92400e;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);direction:rtl;display:flex;height:100vh;overflow:hidden}
+.sidebar{width:210px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0}
+.logo{padding:20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.logo-ic{width:34px;height:34px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:var(--navy);flex-shrink:0}
+.logo h1{color:#fff;font-size:13.5px;font-weight:700;line-height:1.3}
+.logo p{color:rgba(255,255,255,.3);font-size:10px}
+nav{flex:1;padding:8px 0}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 18px;color:rgba(255,255,255,.5);cursor:pointer;font-size:13px;border-right:3px solid transparent;transition:all .15s}
+.nav-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.04)}
+.nav-item.active{color:#fff;background:rgba(201,168,76,.12);border-right-color:var(--gold)}
+.nav-item .ic{font-size:15px;width:18px;text-align:center}
+.badge-num{margin-right:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sidebar-foot{padding:12px 18px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:rgba(255,255,255,.2);line-height:1.8}
+.live{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;margin-left:4px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column}
+.page.active{display:flex}
+.page-hdr{background:#fff;padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.page-hdr h2{font-size:17px;font-weight:700}
+.page-hdr p{font-size:12px;color:var(--muted);margin-top:1px}
+.page-body{flex:1;overflow-y:auto;padding:22px 24px}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:#fff;border-radius:12px;padding:18px;border:1px solid var(--border)}
+.stat-num{font-size:32px;font-weight:800;color:var(--navy)}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:3px}
+.stat-sub{font-size:11px;color:var(--green);margin-top:4px;font-weight:600}
+
+/* Pipeline */
+.pipeline{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;height:100%}
+.pl-col{flex-shrink:0;width:195px;display:flex;flex-direction:column}
+.pl-hdr{background:#fff;border-radius:8px 8px 0 0;padding:10px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-bottom:none}
+.pl-hdr .cnt{background:var(--border);color:var(--muted);padding:1px 7px;border-radius:10px;font-size:10.5px}
+.pl-body{background:#fff;border:1px solid var(--border);border-top:2px solid;border-radius:0 0 8px 8px;flex:1;padding:8px;overflow-y:auto;min-height:100px}
+.pl-col.st-new .pl-body{border-top-color:#94a3b8}
+.pl-col.st-screening .pl-body{border-top-color:#6366f1}
+.pl-col.st-phone .pl-body{border-top-color:var(--amber)}
+.pl-col.st-interview .pl-body{border-top-color:#3b82f6}
+.pl-col.st-offer .pl-body{border-top-color:var(--green)}
+.pl-col.st-hired .pl-body{border-top-color:#059669}
+.cand-card{background:var(--bg);border-radius:7px;padding:10px;margin-bottom:7px;cursor:pointer;border:1px solid transparent;font-size:12.5px;transition:all .15s}
+.cand-card:hover{border-color:var(--navy);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.cc-name{font-weight:700;color:var(--navy);margin-bottom:2px}
+.cc-role{color:var(--muted);font-size:11.5px}
+.cc-foot{margin-top:5px;display:flex;justify-content:space-between;align-items:center}
+.score-badge{padding:1px 7px;border-radius:10px;font-size:10.5px;font-weight:700}
+.sh{background:var(--green-bg);color:var(--green-text)}
+.sm{background:var(--amber-bg);color:var(--amber-text)}
+.sl{background:#fee2e2;color:#991b1b}
+
+/* Jobs */
+.jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.job-card{background:#fff;border-radius:10px;padding:16px;border:1px solid var(--border)}
+.jc-title{font-size:14.5px;font-weight:700;color:var(--navy);margin-bottom:3px}
+.jc-co{font-size:12px;color:var(--muted)}
+.jc-meta{font-size:12px;color:var(--muted);margin-top:8px;line-height:2}
+.jc-actions{display:flex;gap:6px;margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
+.badge-on{background:var(--green-bg);color:var(--green-text)}
+.badge-urgent{background:var(--amber-bg);color:var(--amber-text)}
+
+/* Buttons */
+.btn{border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;font-weight:600;transition:all .15s;border-radius:7px}
+.btn-primary{background:var(--navy);color:#fff;padding:8px 16px;font-size:13px}
+.btn-primary:hover{background:var(--navy2)}
+.btn-gold{background:var(--gold);color:var(--navy);padding:8px 16px;font-size:13px}
+.btn-gold:hover{filter:brightness(1.1)}
+.btn-sm{padding:4px 10px;font-size:11.5px}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:5px 12px;font-size:12px}
+.btn-ghost:hover{border-color:var(--navy);color:var(--navy)}
+.btn-del{background:transparent;color:var(--red);border:1px solid var(--red);padding:4px 9px;font-size:11px;font-family:inherit;cursor:pointer;border-radius:6px}
+.btn-del:hover{background:#fee2e2}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(2px)}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;width:480px;max-width:95vw;max-height:88vh;overflow-y:auto;direction:rtl;animation:mIn .18s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-hdr h3{font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-foot{display:flex;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.form-group{margin-bottom:12px}
+.form-label{display:block;font-size:12.5px;font-weight:600;margin-bottom:4px}
+.form-input,.form-select,.form-ta{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13.5px;font-family:inherit;direction:rtl;outline:none;transition:border-color .2s}
+.form-input:focus,.form-select:focus,.form-ta:focus{border-color:var(--navy)}
+.form-ta{resize:vertical;min-height:70px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.detail-cell{background:var(--bg);border-radius:7px;padding:9px 11px}
+.dc-lbl{font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:2px}
+.dc-val{font-size:13px;font-weight:600}
+.convo{background:#f9f8f5;border-radius:7px;padding:10px;max-height:160px;overflow-y:auto;font-size:12px;line-height:1.8;color:var(--muted);white-space:pre-wrap}
+
+.notif{position:fixed;bottom:20px;left:20px;background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transform:translateY(6px);transition:all .2s;border-right:3px solid var(--gold);pointer-events:none}
+.notif.show{opacity:1;transform:translateY(0)}
+
+.empty{padding:48px 20px;text-align:center;color:var(--muted)}
+.empty .ei{font-size:44px;margin-bottom:12px;opacity:.4}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-ic">ע</div>
+    <div><h1>עוגן תעסוקתי</h1><p>דשבורד צוות</p></div>
+  </div>
+  <nav>
+    <div class="nav-item active" onclick="go('overview',this)"><span class="ic">📊</span> סקירה</div>
+    <div class="nav-item" onclick="go('pipeline',this)"><span class="ic">👥</span> פייפליין <span class="badge-num" id="nb-cands">0</span></div>
+    <div class="nav-item" onclick="go('jobs',this)"><span class="ic">💼</span> משרות</div>
+    <div class="nav-item" onclick="go('leads',this)"><span class="ic">🏢</span> לקוחות <span class="badge-num" id="nb-leads" style="background:var(--amber)">0</span></div>
+  </nav>
+  <div class="sidebar-foot">
+    <span class="live"></span> בוט פעיל<br>
+    ogenemployment.co.il
+  </div>
+</aside>
+
+<div class="main">
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="page-hdr">
+      <div><h2>📊 סקירה כללית</h2><p id="last-refresh">טוען...</p></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadAll()">🔄 רענן</button>
+    </div>
+    <div class="page-body">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" id="st-total">—</div><div class="stat-lbl">מועמדים</div><div class="stat-sub" id="st-today"></div></div>
+        <div class="stat-card"><div class="stat-num" id="st-jobs">—</div><div class="stat-lbl">משרות פתוחות</div></div>
+        <div class="stat-card"><div class="stat-num" id="st-handoff">—</div><div class="stat-lbl">ממתינים לטיפול</div></div>
+        <div class="stat-card"><div class="stat-num" id="st-hired">—</div><div class="stat-lbl">גויסו החודש</div></div>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:18px;border:1px solid var(--border)">
+        <h3 style="font-size:14px;margin-bottom:14px;font-weight:700">Pipeline snapshot</h3>
+        <div id="pipeline-snapshot" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="page" id="page-pipeline">
+    <div class="page-hdr">
+      <div><h2>👥 פייפליין מועמדים</h2><p>לחץ על מועמד לפרטים מלאים</p></div>
+    </div>
+    <div class="page-body" style="overflow:hidden;height:100%">
+      <div class="pipeline" id="pipelineWrap"></div>
+    </div>
+  </div>
+
+  <!-- JOBS -->
+  <div class="page" id="page-jobs">
+    <div class="page-hdr">
+      <div><h2>💼 משרות פתוחות</h2><p>המשרות שהבוט מציע למועמדים</p></div>
+      <button class="btn btn-gold" onclick="openJobModal()">+ הוסף משרה</button>
+    </div>
+    <div class="page-body">
+      <div class="jobs-grid" id="jobsGrid"></div>
+    </div>
+  </div>
+
+  <!-- LEADS -->
+  <div class="page" id="page-leads">
+    <div class="page-hdr">
+      <div><h2>🏢 לקוחות מגייסים</h2><p>חברות שפנו דרך הבוט</p></div>
+    </div>
+    <div class="page-body">
+      <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+        <thead><tr style="background:var(--navy);color:#fff">
+          <th style="padding:10px 14px;text-align:right;font-size:12.5px">חברה</th>
+          <th style="padding:10px 14px;text-align:right;font-size:12.5px">איש קשר</th>
+          <th style="padding:10px 14px;text-align:right;font-size:12.5px">תפקיד</th>
+          <th style="padding:10px 14px;text-align:right;font-size:12.5px">טלפון</th>
+          <th style="padding:10px 14px;text-align:right;font-size:12.5px">תאריך</th>
+        </tr></thead>
+        <tbody id="leadsTable"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">טוען...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Job Modal -->
+<div class="overlay" id="jobOverlay">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="jobModalTitle">הוסף משרה</h3><button class="modal-close" onclick="closeJobModal()">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">כותרת *</label><input class="form-input" id="j_title" placeholder="מנהל מכירות"></div>
+      <div class="form-group"><label class="form-label">חברה (פנימי)</label><input class="form-input" id="j_company" placeholder="חסוי"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">מיקום</label><input class="form-input" id="j_location" placeholder="תל אביב"></div>
+      <div class="form-group"><label class="form-label">תחום</label>
+        <select class="form-select" id="j_field">
+          <option>מכירות / שיווק</option><option>היי-טק / טכנולוגיה</option>
+          <option>ניהול ומשרדים</option><option>פיננסים / ביטוח</option>
+          <option>בריאות / רפואה</option><option>כחול-לבן / תעשייה</option><option>אחר</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">שכר מינימום ₪</label><input class="form-input" id="j_smin" type="number" placeholder="15000"></div>
+      <div class="form-group"><label class="form-label">שכר מקסימום ₪</label><input class="form-input" id="j_smax" type="number" placeholder="25000"></div>
+    </div>
+    <div class="form-group"><label class="form-label">דרישות</label><textarea class="form-ta" id="j_req" placeholder="ניסיון 3 שנים, רישיון נהיגה..."></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">סטטוס</label>
+        <select class="form-select" id="j_status"><option value="true">פעיל</option><option value="false">לא פעיל</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">דחוף?</label>
+        <select class="form-select" id="j_urgent"><option value="false">לא</option><option value="true">כן — דחוף</option></select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-gold" onclick="saveJob()">💾 שמור</button>
+      <button class="btn btn-ghost" onclick="closeJobModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Candidate Modal -->
+<div class="overlay" id="candOverlay">
+  <div class="modal" style="width:520px">
+    <div class="modal-hdr"><h3 id="candModalName">מועמד</h3><button class="modal-close" onclick="closeCandModal()">✕</button></div>
+    <div class="detail-grid" id="candGrid"></div>
+    <div class="form-group"><label class="form-label">סטטוס</label>
+      <select class="form-select" id="candStatus" onchange="updateStatus()"></select>
+    </div>
+    <div class="form-group" style="margin-top:10px"><div class="form-label">שיחה אחרונה</div>
+      <div class="convo" id="candConvo">—</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-del" onclick="deleteCandidate()">🗑️ מחק</button>
+      <button class="btn btn-ghost" onclick="closeCandModal()">סגור</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+const API = '/api';
+let STATE = { candidates:[], jobs:[], leads:[], viewCandId:null, editJobId:null };
+const STAGES = [
+  {id:'new',label:'חדש',cls:'st-new'},
+  {id:'screening',label:'סינון',cls:'st-screening'},
+  {id:'phone',label:'ראיון טלפוני',cls:'st-phone'},
+  {id:'interview',label:'ראיון פנים',cls:'st-interview'},
+  {id:'offer',label:'הצעה',cls:'st-offer'},
+  {id:'hired',label:'גויס ✅',cls:'st-hired'}
+];
+
+// ─── Init ─────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const [cRes, jRes, lRes, sRes] = await Promise.all([
+      fetch(API+'/candidates').then(r=>r.json()),
+      fetch(API+'/jobs').then(r=>r.json()),
+      fetch(API+'/leads').then(r=>r.json()),
+      fetch(API+'/stats').then(r=>r.json())
+    ]);
+    if (cRes.ok) STATE.candidates = cRes.data;
+    if (jRes.ok) STATE.jobs = jRes.data;
+    if (lRes.ok) STATE.leads = lRes.data;
+    if (sRes.ok) renderStats(sRes.data);
+    renderPipeline(); renderJobs(); renderLeads(); updateBadges();
+    document.getElementById('last-refresh').textContent = 'עדכון אחרון: ' + new Date().toLocaleTimeString('he-IL');
+  } catch(e) {
+    notify('❌ שגיאה בטעינת נתונים — בדוק שהשרת פועל');
+  }
+}
+
+function renderStats(s) {
+  document.getElementById('st-total').textContent   = s.total_candidates || 0;
+  document.getElementById('st-jobs').textContent    = s.active_jobs || 0;
+  document.getElementById('st-handoff').textContent = (s.pipeline?.new||0) + (s.pipeline?.screening||0);
+  document.getElementById('st-hired').textContent   = s.pipeline?.hired || 0;
+  if (s.new_today) document.getElementById('st-today').textContent = '+' + s.new_today + ' היום';
+  const snap = document.getElementById('pipeline-snapshot');
+  snap.innerHTML = STAGES.map(st =>
+    `<div style="background:var(--bg);border-radius:8px;padding:10px 14px;text-align:center;min-width:80px;border:1px solid var(--border)">
+      <div style="font-size:22px;font-weight:800;color:var(--navy)">${s.pipeline?.[st.id]||0}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${st.label}</div>
+    </div>`
+  ).join('');
+}
+
+function renderPipeline() {
+  const wrap = document.getElementById('pipelineWrap');
+  if (!STATE.candidates.length) {
+    wrap.innerHTML = '<div class="empty" style="width:100%"><div class="ei">👥</div><p>אין מועמדים עדיין</p></div>';
+    return;
+  }
+  wrap.innerHTML = STAGES.map(st => {
+    const cands = STATE.candidates.filter(c => c.status === st.id);
+    const cards = cands.map(c => {
+      const sc = c.score;
+      const cls = sc >= 8 ? 'sh' : sc >= 6 ? 'sm' : 'sl';
+      return `<div class="cand-card" onclick="viewCandidate('${c.id}')">
+        <div class="cc-name">${c.name || c.phone}</div>
+        <div class="cc-role">${c.role_sought || '—'}</div>
+        <div class="cc-foot">
+          <span class="score-badge ${cls}">${sc ? sc+'/10' : '—'}</span>
+          <span style="font-size:10.5px;color:var(--muted)">${new Date(c.created_at).toLocaleDateString('he-IL')}</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="pl-col ${st.cls}">
+      <div class="pl-hdr">${st.label}<span class="cnt">${cands.length}</span></div>
+      <div class="pl-body">${cards || '<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center">ריק</div>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderJobs() {
+  const g = document.getElementById('jobsGrid');
+  if (!STATE.jobs.length) {
+    g.innerHTML = '<div class="empty"><div class="ei">💼</div><p>אין משרות עדיין</p></div>';
+    return;
+  }
+  g.innerHTML = STATE.jobs.map(j => {
+    const badge = j.urgent ? '<span class="badge badge-urgent">דחוף</span>' : '<span class="badge badge-on">פעיל</span>';
+    const sal = j.salary_min ? `💰 ₪${Number(j.salary_min).toLocaleString()}${j.salary_max?'–₪'+Number(j.salary_max).toLocaleString():'+'}`:'';
+    return `<div class="job-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div><div class="jc-title">${j.title}</div><div class="jc-co">${j.company||'חסוי'}</div></div>
+        ${badge}
+      </div>
+      <div class="jc-meta">
+        ${j.location?`<span>📍 ${j.location}</span> `:''}
+        ${j.field?`<span>🏷️ ${j.field}</span> `:''}
+        ${sal?`<div>${sal}</div>`:''}
+      </div>
+      ${j.requirements?`<div style="font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.5">${j.requirements.substring(0,70)}${j.requirements.length>70?'...':''}</div>`:''}
+      <div class="jc-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openJobModal('${j.id}')">✏️ עריכה</button>
+        <button class="btn-del" onclick="deleteJob('${j.id}')">מחק</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLeads() {
+  const t = document.getElementById('leadsTable');
+  if (!STATE.leads.length) {
+    t.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted)">אין לקוחות עדיין</td></tr>';
+    return;
+  }
+  t.innerHTML = STATE.leads.map(l =>
+    `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px 14px;font-size:13px;font-weight:600">${l.company_name||'—'}</td>
+      <td style="padding:10px 14px;font-size:13px">${l.contact_name||'—'}</td>
+      <td style="padding:10px 14px;font-size:13px">${l.role_needed||'—'}</td>
+      <td style="padding:10px 14px;font-size:13px">${l.phone||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--muted)">${new Date(l.created_at).toLocaleDateString('he-IL')}</td>
+    </tr>`
+  ).join('');
+}
+
+function updateBadges() {
+  document.getElementById('nb-cands').textContent = STATE.candidates.filter(c=>c.status==='new'||c.status==='screening').length;
+  document.getElementById('nb-leads').textContent = STATE.leads.filter(l=>l.status==='new').length;
+}
+
+// ─── Candidate Modal ──────────────────────────────────
+function viewCandidate(id) {
+  STATE.viewCandId = id;
+  const c = STATE.candidates.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('candModalName').textContent = c.name || c.phone;
+  document.getElementById('candGrid').innerHTML = [
+    ['טלפון', c.phone], ['תפקיד', c.role_sought||'—'],
+    ['ניסיון', c.experience||'—'], ['שכר', c.salary_exp||'—'],
+    ['מיקום', c.location||'—'], ['זמינות', c.availability||'—'],
+    ['ציון', c.score ? c.score+'/10' : '—'], ['CV', c.cv_url ? `<a href="${c.cv_url}" target="_blank">פתח ↗</a>` : '—'],
+    ['פלטפורמה', c.platform||'—'], ['תאריך', new Date(c.created_at).toLocaleDateString('he-IL')]
+  ].map(([l,v]) => `<div class="detail-cell"><div class="dc-lbl">${l}</div><div class="dc-val">${v}</div></div>`).join('');
+  const sel = document.getElementById('candStatus');
+  sel.innerHTML = STAGES.map(s => `<option value="${s.id}"${c.status===s.id?' selected':''}>${s.label}</option>`).join('');
+  document.getElementById('candConvo').textContent = '(שיחה נטענת מהשרת)';
+  document.getElementById('candOverlay').classList.add('open');
+}
+function closeCandModal() { document.getElementById('candOverlay').classList.remove('open'); }
+
+async function updateStatus() {
+  const status = document.getElementById('candStatus').value;
+  await fetch(`${API}/candidates/${STATE.viewCandId}/status`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ status })
+  });
+  const c = STATE.candidates.find(x => x.id === STATE.viewCandId);
+  if (c) c.status = status;
+  renderPipeline(); updateBadges(); notify('✅ סטטוס עודכן');
+}
+
+async function deleteCandidate() {
+  if (!confirm('למחוק מועמד זה?')) return;
+  // לא יש endpoint מחיקה כרגע — נסיר מ-state
+  STATE.candidates = STATE.candidates.filter(c => c.id !== STATE.viewCandId);
+  closeCandModal(); renderPipeline(); updateBadges(); notify('🗑️ מועמד הוסר');
+}
+
+// ─── Job Modal ────────────────────────────────────────
+function openJobModal(id) {
+  STATE.editJobId = id || null;
+  const j = id ? STATE.jobs.find(x => x.id === id) : null;
+  document.getElementById('jobModalTitle').textContent = j ? 'עריכת משרה' : 'הוסף משרה';
+  document.getElementById('j_title').value    = j?.title || '';
+  document.getElementById('j_company').value  = j?.company || '';
+  document.getElementById('j_location').value = j?.location || '';
+  document.getElementById('j_field').value    = j?.field || 'מכירות / שיווק';
+  document.getElementById('j_smin').value     = j?.salary_min || '';
+  document.getElementById('j_smax').value     = j?.salary_max || '';
+  document.getElementById('j_req').value      = j?.requirements || '';
+  document.getElementById('j_status').value   = j ? String(j.is_active) : 'true';
+  document.getElementById('j_urgent').value   = j ? String(j.urgent) : 'false';
+  document.getElementById('jobOverlay').classList.add('open');
+}
+function closeJobModal() { document.getElementById('jobOverlay').classList.remove('open'); }
+
+async function saveJob() {
+  const title = document.getElementById('j_title').value.trim();
+  if (!title) { notify('⚠️ כותרת חובה'); return; }
+  const body = {
+    title, company: document.getElementById('j_company').value.trim(),
+    location: document.getElementById('j_location').value.trim(),
+    field: document.getElementById('j_field').value,
+    salary_min: parseInt(document.getElementById('j_smin').value)||null,
+    salary_max: parseInt(document.getElementById('j_smax').value)||null,
+    requirements: document.getElementById('j_req').value.trim(),
+    is_active: document.getElementById('j_status').value === 'true',
+    urgent: document.getElementById('j_urgent').value === 'true'
+  };
+  const url    = STATE.editJobId ? `${API}/jobs/${STATE.editJobId}` : `${API}/jobs`;
+  const method = STATE.editJobId ? 'PATCH' : 'POST';
+  const res    = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const data   = await res.json();
+  if (data.ok) {
+    if (STATE.editJobId) {
+      const i = STATE.jobs.findIndex(j => j.id === STATE.editJobId);
+      if (i >= 0) STATE.jobs[i] = data.data;
+    } else {
+      STATE.jobs.unshift(data.data);
+    }
+    renderJobs(); closeJobModal(); notify('✅ משרה נשמרה!');
+  } else { notify('❌ שגיאה: ' + data.error); }
+}
+
+async function deleteJob(id) {
+  if (!confirm('למחוק משרה זו?')) return;
+  await fetch(`${API}/jobs/${id}`, { method:'DELETE' });
+  STATE.jobs = STATE.jobs.filter(j => j.id !== id);
+  renderJobs(); notify('🗑️ משרה נמחקה');
+}
+
+// ─── Nav ──────────────────────────────────────────────
+function go(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ─── Auto-refresh כל דקה ──────────────────────────────
+loadAll();
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>
