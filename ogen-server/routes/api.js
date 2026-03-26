@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db/supabase');
+const axios   = require('axios');
 
 // ─── CANDIDATES ───────────────────────────────────────
 router.get('/candidates', async (req, res) => {
@@ -83,4 +84,13 @@ router.get('/stats', async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-module.exports = router;
+// ─── TELEGRAM TEST ────────────────────────────────────
+router.get('/publish-test', async (req, res) => {
+  try {
+    const token = process.env.TELEGRAM_TOKEN;
+    const r = await axios.post(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      { chat_id: '@ogenemploymenta', text: '✅ *בדיקה — עוגן תעסוקתי*\nהשרת מחובר לערוץ!', parse_mode: 'Markdown' }
+    );
+    res.json(r.data);
+  } catch (e) { res.status(
