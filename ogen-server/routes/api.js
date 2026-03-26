@@ -151,4 +151,22 @@ router.get('/load-jobs', async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+router.get('/load-jobs', async (req, res) => {
+  try {
+    const jobs = require('../jobs_data.json');
+    let count = 0;
+    for (const j of jobs) {
+      await db.createJob(j);
+      count++;
+    }
+    res.json({ ok: true, loaded: count });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+```
+
+Commit ← אחרי שRailway בונה ← פתח:
+```
+https://ogen-whatsapp-bot-production.up.railway.app/api/load-jobs
 module.exports = router;
