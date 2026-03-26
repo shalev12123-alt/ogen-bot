@@ -58,6 +58,39 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', bot: process.env.BOT_NAME, time: new Date().toISOString() });
 });
 
+const axios = require('axios');
+let jobPublishIndex = 0;
+
+setInterval(async () => {
+  try {
+    const token = process.env.TELEGRAM_TOKEN;
+    const channel = '@ogenemploymenta';
+    const db = require('./db/supabase');
+    const jobs = await db.getActiveJobs();
+    if (!jobs.length) return;
+    
+    const batch = [];
+    for (let i = 0; i < 5; i++) {
+      batch.push(jobs[jobPublishIndex % jobs.length]);
+      jobPublishIndex++;
+    }
+    
+    for (const j of batch) {
+      const sal = j.salary_min ? '\n💰 ' + Number(j.salary_min).toLocaleString() + ' ש"ח' : '';
+      const reqs = j.requirements ? '\n✅ ' + j.requirements.substring(0, 80) : '';
+      const text = '🔥 ' + j.title + '\n📍 ' + (j.location || 'לא צוין') + sal + reqs + '\n\nעוגן תעסוקתי | ogenemployment.co.il';
+      await axios.post('https://api.telegram.org/bot' + token + '/sendMessage', {
+        chat_id: channel,
+        text: text,
+        reply_markup: { inline_keyboard: [[{ text: 'שלח קו"ח', url: 'https://t.me/ogenemployment_bot' }]] }
+      });
+      await new Promise(r => setTimeout(r, 10000));
+    }
+    console.log('פורסמו 5 משרות לערוץ');
+  } catch(e) {
+    console.error('Auto publish error:', e.message);
+  }
+}, 60 * 60 * 1000);
 app.listen(PORT, () => {
   console.log(`🚀 עוגן-בוט פועל על פורט ${PORT}`);
   console.log(`📱 Webhook: https://YOUR_DOMAIN/webhook`);
