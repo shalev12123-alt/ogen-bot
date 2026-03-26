@@ -111,5 +111,24 @@ router.get('/publish-test', async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
-
+router.get('/publish-jobs', async (req, res) => {
+  res.json({ ok: true, message: 'מתחיל פרסום...' });
+  try {
+    const token = process.env.TELEGRAM_TOKEN;
+    const channel = '@ogenemploymenta';
+    const jobs = await db.getActiveJobs();
+    const limit = parseInt(req.query.limit) || 10;
+    const batch = jobs.slice(0, limit);
+    for (const j of batch) {
+      const sal = j.salary_min ? `\n💰 ₪${Number(j.salary_min).toLocaleString()}${j.salary_max ? '-₪'+Number(j.salary_max).toLocaleString() : '+'}` : '';
+      const req2 = j.requirements ? `\n✅ ${j.requirements.substring(0,80)}` : '';
+      const text = `🔥 *${j.title}*\n📍 ${j.location || 'לא צוין'}${sal}${req2}\n\n_עוגן תעסוקתי | ogenemployment.co.il_`;
+      await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+        chat_id: channel, text, parse_mode: 'Markdown',
+        reply_markup: { inline_keyboard: [[{ text: 'שלח קו"ח', url: 'https://t.me/ogenemployment_bot' }]] }
+      });
+      await new Promise(r => setTimeout(r, 1100));
+    }
+  } catch(e) { console.error('Publish error:', e.message); }
+});
 module.exports = router;
