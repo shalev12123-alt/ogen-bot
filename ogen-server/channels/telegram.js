@@ -1,0 +1,29 @@
+const axios = require('axios');
+const claude = require('../bot/claude');
+
+const BASE = () => `https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}`;
+
+async function setWebhook(url) {
+  await axios.post(`${BASE()}/setWebhook`, { url: `${url}/telegram` });
+  console.log('✅ Telegram webhook set');
+}
+
+async function handleIncoming(req, res) {
+  res.sendStatus(200);
+  const msg = req.body.message;
+  if (!msg || !msg.text) return;
+  const chatId = String(msg.chat.id);
+  const text = msg.text;
+  try {
+    const result = await claude.processMessage(chatId, text, 'telegram');
+    await sendMessage(chatId, result.text);
+  } catch(e) {
+    await sendMessage(chatId, 'מצטער, נתקלתי בבעיה. נסה שוב 🙏');
+  }
+}
+
+async function sendMessage(chatId, text) {
+  await axios.post(`${BASE()}/sendMessage`, { chat_id: chatId, text });
+}
+
+module.exports = { handleIncoming, setWebhook };
