@@ -169,6 +169,5 @@ router.get('/get-chats', async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
-```
 
 module.exports = router;
