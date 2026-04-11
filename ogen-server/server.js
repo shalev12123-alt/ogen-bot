@@ -4,6 +4,7 @@ const Anthropic = require("@anthropic-ai/sdk");
 const twilio = require("twilio");
 const axios = require("axios");
 const path = require('path');
+const db = require('./db/supabase');
 const { createClient } = require
 const {
   searchJobs,
@@ -177,6 +178,7 @@ async function processMessage(platform, userId, userMessage) {
   const key = `${platform}:${userId}`;
   if (!conversations[key]) conversations[key] = [];
   if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
+    await db.getOrCreateCandidate(userId, platform);
 
   conversations[key].push({ role: "user", content: userMessage });
   if (conversations[key].length > MAX_HISTORY) {
