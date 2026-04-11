@@ -3,6 +3,7 @@ const express = require("express");
 const Anthropic = require("@anthropic-ai/sdk");
 const twilio = require("twilio");
 const axios = require("axios");
+const { createClient } = require("@supabase/supabase-js");
 const {
   searchJobs,
   formatJobsForPrompt,
@@ -22,10 +23,40 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
+// ✅ Supabase — זיכרון שיחות עמיד בפני רסטרטים
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
+
 // ── Conversation Store ────────────────────────────────────────────
 const conversations = {};
 const candidateContext = {}; // שמירת העדפות מועמד לאורך השיחה
 const MAX_HISTORY = 30;
+
+async function loadConversation(key) {
+  if (conversations[key]) return;
+  try {
+    const { data } = await supabase.from("conversations").select("history").eq("chat_id", key).maybeSingle();
+    conversations[key] = data?.history || [];
+    if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
+  } catch (err) {
+    console.error("[Supabase load]", err.message);
+    conversations[key] = [];
+    if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
+  }
+}
+
+async function saveConversation(key) {
+  try {
+    await supabase.from("conversations").upsert(
+      { chat_id: key, history: conversations[key].slice(-MAX_HISTORY), updated_at: new Date().toISOString() },
+      { onConflict: "chat_id" }
+    );
+  } catch (err) {
+    console.error("[Supabase save]", err.message);
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  AIRTABLE — שמירת מועמדים ומשרות חדשות
@@ -172,7 +203,7 @@ ${jobsSection}
 // ══════════════════════════════════════════════════════════════════
 async function processMessage(platform, userId, userMessage) {
   const key = `${platform}:${userId}`;
-  if (!conversations[key]) conversations[key] = [];
+  await loadConversation(key);
   if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
 
   conversations[key].push({ role: "user", content: userMessage });
@@ -215,6 +246,7 @@ async function processMessage(platform, userId, userMessage) {
 
   let reply = response.content[0].text;
   conversations[key].push({ role: "assistant", content: reply });
+  saveConversation(key).catch(() => {});
 
   // ── מועמד סיים שיחה ───────────────────────────────────────
   if (reply.includes("##CANDIDATE_SUMMARY##")) {
@@ -283,7 +315,7 @@ app.post("/webhook/telegram", async (req, res) => {
     const reply = await processMessage("telegram", String(chatId), message.text);
     await axios.post(
       `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
-      { chat_id: chatId, text: reply, parse_mode: "Markdown" }
+      { chat_id: chatId, text: reply.substring(0, 4096) }
     );
   } catch (err) {
     console.error("[Telegram Error]", err.message);
