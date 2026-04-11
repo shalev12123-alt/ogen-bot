@@ -3,7 +3,8 @@ const express = require("express");
 const Anthropic = require("@anthropic-ai/sdk");
 const twilio = require("twilio");
 const axios = require("axios");
-const { createClient } = require("@supabase/supabase-js");
+const path = require('path');
+const { createClient } = require
 const {
   searchJobs,
   formatJobsForPrompt,
@@ -15,6 +16,7 @@ const {
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Clients ───────────────────────────────────────────────────────
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -23,40 +25,10 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-// ✅ Supabase — זיכרון שיחות עמיד בפני רסטרטים
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
-
 // ── Conversation Store ────────────────────────────────────────────
 const conversations = {};
 const candidateContext = {}; // שמירת העדפות מועמד לאורך השיחה
 const MAX_HISTORY = 30;
-
-async function loadConversation(key) {
-  if (conversations[key]) return;
-  try {
-    const { data } = await supabase.from("conversations").select("history").eq("chat_id", key).maybeSingle();
-    conversations[key] = data?.history || [];
-    if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
-  } catch (err) {
-    console.error("[Supabase load]", err.message);
-    conversations[key] = [];
-    if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
-  }
-}
-
-async function saveConversation(key) {
-  try {
-    await supabase.from("conversations").upsert(
-      { chat_id: key, history: conversations[key].slice(-MAX_HISTORY), updated_at: new Date().toISOString() },
-      { onConflict: "chat_id" }
-    );
-  } catch (err) {
-    console.error("[Supabase save]", err.message);
-  }
-}
 
 // ══════════════════════════════════════════════════════════════════
 //  AIRTABLE — שמירת מועמדים ומשרות חדשות
@@ -203,7 +175,8 @@ ${jobsSection}
 // ══════════════════════════════════════════════════════════════════
 async function processMessage(platform, userId, userMessage) {
   const key = `${platform}:${userId}`;
-  await loadConversation(key);
+  if (!conversations[key]) conversations[key] = [];
+  if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
 
   conversations[key].push({ role: "user", content: userMessage });
   if (conversations[key].length > MAX_HISTORY) {
@@ -245,7 +218,6 @@ async function processMessage(platform, userId, userMessage) {
 
   let reply = response.content[0].text;
   conversations[key].push({ role: "assistant", content: reply });
-  saveConversation(key).catch(() => {});
 
   // ── מועמד סיים שיחה ───────────────────────────────────────
   if (reply.includes("##CANDIDATE_SUMMARY##")) {
@@ -291,7 +263,6 @@ app.post("/webhook/whatsapp", async (req, res) => {
   const twiml = new MessagingResponse();
   const userMessage = (req.body.Body || "").trim();
   const from = req.body.From;
-  if (!userMessage || !from) { res.type("text/xml"); return res.send(twiml.toString()); }
   try {
     const reply = await processMessage("whatsapp", from, userMessage);
     twiml.message(reply);
@@ -418,6 +389,7 @@ app.get("/health", (req, res) => {
 
 // ══════════════════════════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;
+app.use('/api', require('./routes/api'));
 app.listen(PORT, () =>
   console.log(`🚀 מיכאל v3 פעיל – ${JOBS.length} משרות – פורט ${PORT}`)
 );
