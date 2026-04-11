@@ -204,7 +204,6 @@ ${jobsSection}
 async function processMessage(platform, userId, userMessage) {
   const key = `${platform}:${userId}`;
   await loadConversation(key);
-  if (!candidateContext[key]) candidateContext[key] = { type: null, location: null };
 
   conversations[key].push({ role: "user", content: userMessage });
   if (conversations[key].length > MAX_HISTORY) {
@@ -292,6 +291,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
   const twiml = new MessagingResponse();
   const userMessage = (req.body.Body || "").trim();
   const from = req.body.From;
+  if (!userMessage || !from) { res.type("text/xml"); return res.send(twiml.toString()); }
   try {
     const reply = await processMessage("whatsapp", from, userMessage);
     twiml.message(reply);
